@@ -47,7 +47,7 @@ export function normalizeProfile(p: ProfileApiModel | null | undefined): UserPro
 export async function getProfile(): Promise<ProfileApiModel> {
   try {
     // Supports both {data:{...}} envelope and flat payloads
-    const { data } = await api.get("/profile");
+    const { data } = await api.get("/users/me");
     return (data?.data ?? data) as ProfileApiModel;
   } catch (e: unknown) {
     throw extractError(e, "Failed to load profile");
@@ -68,7 +68,7 @@ export type UpdateProfilePayload = {
 
 export async function updateProfile(payload: UpdateProfilePayload): Promise<ProfileApiModel> {
   try {
-    const { data } = await api.patch("/profile", payload);
+    const { data } = await api.put("/users/me", payload);
     // Return raw profile as your ProfilePage currently expects
     return (data?.data ?? data) as ProfileApiModel;
   } catch (e: unknown) {

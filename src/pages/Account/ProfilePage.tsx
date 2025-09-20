@@ -8,7 +8,6 @@ import { updateProfile } from "@/services/profile.service";
 type UpdPayload = {
   full_name?: string | null;
   gender?: string | null;
-  voice_pref?: string | null;
 };
 
 export default function ProfilePage() {
@@ -18,24 +17,22 @@ export default function ProfilePage() {
   // Local form state
   const [fullName, setFullName] = useState(user?.full_name ?? "");
   const [gender, setGender] = useState(user?.gender ?? "");
-  const [voice, setVoice] = useState(user?.voice_pref ?? "");
   const [loading, setLoading] = useState(false);
   const [ok, setOk] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   // Voice list (sample defaults; keep user’s current voice at top)
-  const voiceOptions = useMemo(() => {
-    const base = ["Matthew", "Joanna", "Amy", "Brian", "Aditi", "Raveena", "Zhiyu", "Kajal"];
-    const uniq = Array.from(new Set([voice || "", ...base])).filter(Boolean);
-    return uniq;
-  }, [voice]);
+  // const voiceOptions = useMemo(() => {
+  //   const base = ["Matthew", "Joanna", "Amy", "Brian", "Aditi", "Raveena", "Zhiyu", "Kajal"];
+  //   const uniq = Array.from(new Set([voice || "", ...base])).filter(Boolean);
+  //   return uniq;
+  // }, [voice]);
 
   useEffect(() => {
     // sync when Redux changes (e.g., after login)
     setFullName(user?.full_name ?? "");
     setGender(user?.gender ?? "");
-    setVoice(user?.voice_pref ?? "");
-  }, [user?.full_name, user?.gender, user?.voice_pref]);
+  }, [user?.full_name, user?.gender]);
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
@@ -50,7 +47,6 @@ export default function ProfilePage() {
     const payload: UpdPayload = {
       full_name: fullName.trim(),
       gender: gender || null,
-      voice_pref: voice || null,
     };
 
     setLoading(true);
@@ -62,7 +58,6 @@ export default function ProfilePage() {
         email: updated.email ?? user?.email ?? "",
         full_name: updated.full_name ?? null,
         gender: updated.gender ?? null,
-        voice_pref: updated.voice_pref ?? null,
       };
       saveAuth({ token, user: nextUser });
       // rehydrate Redux from storage so the whole app sees the change
@@ -138,28 +133,6 @@ export default function ProfilePage() {
             </select>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm opacity-85">Preferred voice</label>
-            <div className="flex gap-2">
-              <select
-                value={voice}
-                onChange={(e) => setVoice(e.target.value)}
-                className="w-full rounded-xl bg-white/[0.04] border border-white/10 px-3 py-2 outline-none focus:border-[--primary]"
-              >
-                <option value="">Select a voice…</option>
-                {voiceOptions.map((v) => (
-                  <option key={v} value={v}>{v}</option>
-                ))}
-              </select>
-              {/* optional free-text override */}
-              <input
-                value={voice}
-                onChange={(e) => setVoice(e.target.value)}
-                placeholder="or type..."
-                className="w-40 rounded-xl bg-white/[0.04] border border-white/10 px-3 py-2 outline-none focus:border-[--primary]"
-              />
-            </div>
-          </div>
         </div>
 
         <div className="pt-2">

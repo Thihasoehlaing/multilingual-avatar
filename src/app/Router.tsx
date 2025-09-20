@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation,Navigate } from "react-router-dom";
 import ScrollToTop from "@/components/common/ScrollToTop";
 import Footer from "@/components/layout/Footer";
 import PublicNavbar from "@/components/layout/PublicNavbar";
@@ -39,7 +39,14 @@ function Shell() {
       <main>
         <Routes>
           {/* Public */}
-          <Route path="/" element={<LandingPage />} />
+          <Route
+            path="/"
+            element={
+              token ? <Navigate to="/account" replace /> : <LandingPage />
+            }
+          />
+
+          {/* <Route path="/" element={<LandingPage />} /> */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
 
