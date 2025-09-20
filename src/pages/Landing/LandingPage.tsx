@@ -22,10 +22,6 @@ export default function LandingPage() {
                 Create account
               </a>
             </div>
-
-            <div className="mt-6 text-xs opacity-60">
-              API: <span className="font-mono">{import.meta.env.VITE_API_BASE_URL}</span>
-            </div>
           </div>
 
           <div className="relative rounded-2xl p-4 lg:p-6 bg-[--bg-alt] shadow-[0_40px_120px_-60px_rgba(0,0,0,.8)] ring-1 ring-white/5">

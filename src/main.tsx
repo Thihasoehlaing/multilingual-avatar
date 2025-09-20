@@ -1,10 +1,19 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { Provider } from "react-redux";
+import { store } from "@/store";
+import { AppRouter } from "./app/Router";
 import './styles/index.css'
-import App from './App.tsx'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+import { logout, rehydrate } from "@/store/auth.slice";
+
+window.addEventListener("focus", () => store.dispatch(rehydrate()));
+window.addEventListener("auth:unauthorized", () => store.dispatch(logout()));
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <Provider store={store}>
+      <AppRouter />
+    </Provider>
+  </React.StrictMode>
+);
