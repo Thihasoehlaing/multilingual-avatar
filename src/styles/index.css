@@ -31,3 +31,17 @@ body { background: var(--bg); color: var(--fg); }
     linear-gradient(to bottom, transparent, rgba(255,255,255,.04) 0.5px, transparent 0.5px) top/100% 1px no-repeat;
 }
 
+select option {
+  background-color: var(--bg);
+  color: var(--fg);
+}
+
+select option:checked {
+  background-color: var(--primary);
+  color: white;
+}
+
+select option:hover {
+  background-color: var(--primary-hover);
+  color: var(--fg);
+}

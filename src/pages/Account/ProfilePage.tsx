@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { selectAuth, rehydrate } from "@/store/auth.slice";
@@ -129,7 +129,6 @@ export default function ProfilePage() {
               <option value="">Prefer not to say</option>
               <option value="male">Male</option>
               <option value="female">Female</option>
-              <option value="other">Other</option>
             </select>
           </div>
 
