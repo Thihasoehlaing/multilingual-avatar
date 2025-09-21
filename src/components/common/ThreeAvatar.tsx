@@ -4,13 +4,7 @@ import { OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import type { GLTF } from "three-stdlib";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-
-export type VisemeFrame = {
-  t: number;           // milliseconds from start
-  label?: string;      // e.g. "AA","MBP" (used if model has matching morph)
-  mouth: number;       // 0..1 mouth openness/intensity
-  smile?: number;      // reserved
-};
+import type { VisemeFrame } from "@/types/viseme";
 
 type ThreeAvatarProps = {
   gender: "male" | "female";
@@ -25,6 +19,8 @@ type ThreeAvatarProps = {
   modelGroupPosition?: [number, number, number];
   /** Auto-aim at the head and zoom so the face fills the frame */
   autoFrameFace?: boolean;
+  /** If you know your head mesh name, set this to lock the visemes onto it */
+  morphMeshName?: string;
 };
 
 /* ------------------ helpers ------------------ */
@@ -54,15 +50,38 @@ function sampleViseme(visemes: VisemeFrame[] | undefined, playheadMs: number) {
   return { mouth: 0, smile: 0, label: undefined };
 }
 
-function findMorphMesh(root: THREE.Object3D): THREE.Mesh | null {
-  let found: THREE.Mesh | null = null;
+function allMorphMeshes(root: THREE.Object3D): THREE.Mesh[] {
+  const arr: THREE.Mesh[] = [];
   root.traverse((obj) => {
-    if (found) return;
     const mesh = obj as THREE.Mesh;
     const ok = mesh.morphTargetInfluences && mesh.morphTargetDictionary && Array.isArray(mesh.morphTargetInfluences);
-    if (ok) found = mesh;
+    if (ok) arr.push(mesh);
   });
-  return found;
+  return arr;
+}
+
+function scoreMeshForFace(mesh: THREE.Mesh) {
+  const name = (mesh.name || "").toLowerCase();
+  let score = 0;
+  if (name.includes("head") || name.includes("face") || name.includes("mouth") || name.includes("jaw")) score += 2;
+  const dict = mesh.morphTargetDictionary ?? {};
+  const keys = Object.keys(dict).map((k) => k.toLowerCase());
+  const hits = ["viseme", "mouth", "jaw", "aa", "mbp", "s", "t", "k", "iy", "uw"]
+    .reduce((acc, token) => acc + (keys.some((k) => k.includes(token)) ? 1 : 0), 0);
+  score += hits;
+  return score;
+}
+
+function pickBestMorphMesh(root: THREE.Object3D, preferredName?: string): THREE.Mesh | null {
+  const meshes = allMorphMeshes(root);
+  if (meshes.length === 0) return null;
+  if (preferredName) {
+    const byName = meshes.find(
+      (m) => m.name === preferredName || m.name.toLowerCase().includes(preferredName.toLowerCase())
+    );
+    if (byName) return byName;
+  }
+  return meshes.slice().sort((a, b) => scoreMeshForFace(b) - scoreMeshForFace(a))[0];
 }
 
 function buildVisemeIndexMap(mesh: THREE.Mesh) {
@@ -174,6 +193,7 @@ function GLTFHead({
   idle = true,
   controlsRef,
   enableAutoFrame,
+  morphMeshName,
 }: {
   modelUrl: string;
   playheadMs?: number;
@@ -181,10 +201,11 @@ function GLTFHead({
   idle?: boolean;
   controlsRef: React.RefObject<OrbitControlsImpl>;
   enableAutoFrame: boolean;
+  morphMeshName?: string;
 }) {
   const gltf = useGLTF(modelUrl) as unknown as GLTF;
   const root = gltf.scene as THREE.Group;
-  const morphMesh = useMemo(() => (root ? findMorphMesh(root) : null), [root]);
+  const morphMesh = useMemo(() => (root ? pickBestMorphMesh(root, morphMeshName) : null), [root, morphMeshName]);
   const dict = morphMesh?.morphTargetDictionary ?? null;
   const influ = morphMesh?.morphTargetInfluences ?? null;
   const indexMap = useMemo(() => (morphMesh ? buildVisemeIndexMap(morphMesh) : {}), [morphMesh]);
@@ -235,17 +256,18 @@ function GLTFHead({
     for (let i = 0; i < influ.length; i++) influ[i] = 0;
 
     const { mouth, label } = sampleViseme(visemes, playheadMs ?? 0);
+    const weight = clamp01(mouth);
     if (label && indexMap[label] != null) {
-      influ[indexMap[label]!] = clamp01(mouth);
+      influ[indexMap[label]!] = weight;
     } else {
       const tryOrder = ["AA","AH","AO","IY","UW","OH","AE","EH","ER","MBP","L","TH","CH","R","S","T","K"];
       for (const key of tryOrder) {
         const idx = indexMap[key];
-        if (idx != null) { influ[idx] = clamp01(mouth); break; }
+        if (idx != null) { influ[idx] = weight; break; }
       }
     }
 
-    if (idle || mouth < 0.2) {
+    if (idle || weight < 0.2) {
       blinkTimer.current += delta;
       if (!blinking.current && blinkTimer.current >= nextBlinkAt.current) {
         blinking.current = true; blinkTimer.current = 0;
@@ -278,6 +300,7 @@ export default function ThreeAvatar({
   orbitTarget = [0, 1.6, 0],
   modelGroupPosition = [0, 0, 0],
   autoFrameFace = true,
+  morphMeshName,
 }: ThreeAvatarProps) {
   const controlsRef = useRef<OrbitControlsImpl>(null!);
 
@@ -297,6 +320,7 @@ export default function ThreeAvatar({
               idle={idle}
               controlsRef={controlsRef}
               enableAutoFrame={autoFrameFace}
+              morphMeshName={morphMeshName}
             />
           ) : (
             <FallbackHead gender={gender} playheadMs={playheadMs} visemes={visemes} idle={idle} />
