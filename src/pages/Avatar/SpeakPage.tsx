@@ -30,8 +30,8 @@ export default function SpeakPage() {
   );
 
   // UI state
-  const [mode, setMode] = useState<InputMode>("voice");
-  const [textValue, setTextValue] = useState<string>("Hello! Selamat berkenalan.");
+  const [mode, setMode] = useState<InputMode>("text");
+  const [textValue, setTextValue] = useState<string>("Hello! Semua orang, nama saya John. Saya suka bermain permainan.");
   const [loading, setLoading] = useState<boolean>(false);
 
   // Lip-sync state
